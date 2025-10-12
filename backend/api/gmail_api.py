@@ -1,4 +1,4 @@
-import os.path
+import os.path, json
 
 import logging
 from google.auth.transport.requests import Request
@@ -7,14 +7,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from typing import List, Dict, Any
-    
-CLIENTSECRETS_LOCATION = '/gmail-agent/credentials.json'
-SCOPES = [
-    'https://www.googleapis.com/auth/gmail.readonly',
-    'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/userinfo.profile',
-    # Add other requested scopes.
-]
+
+from user_ops import get_user_token, store_user_token, check_if_user_exists, store_user
 
 class GmailAPI:
     """
@@ -28,26 +22,32 @@ class GmailAPI:
     
     # If modifying these scopes, delete the file token.json.
     SCOPES = [
-        'https://www.googleapis.com/auth/gmail.readonly'
-        # Add other requested scopes.
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'openid',
     ]
     
-    def __init__(self, credentials_file: str = "credentials.json", token_file: str = "token.json"):
+    def __init__(self, email: str, credentials_file: str = "credentials.json"):
         """
         Initialize Gmail API client.
         
         Args:
+            email: User's email address (used to fetch/store tokens in database)
             credentials_file: Path to OAuth2 credentials JSON file
-            token_file: Path to store/load access tokens
         """
+        self.email = email
         self.credentials_file = credentials_file
-        self.token_file = token_file
         self.service = None
         self.credentials = None
         
-    def authenticate(self) -> bool:
+    def authenticate(self, username: str = None) -> bool:
         """
         Authenticate with Gmail API using OAuth2.
+        Loads token from database if available, otherwise performs OAuth flow.
+        
+        Args:
+            username: Optional username to save when creating new user
         
         Returns:
             bool: True if authentication successful, False otherwise
@@ -55,40 +55,78 @@ class GmailAPI:
         try:
             self.credentials = None
             
-            # Load existing credentials
-            if os.path.exists(self.token_file):
-                self.credentials = Credentials.from_authorized_user_file(
-                    self.token_file, 
-                    self.SCOPES
-                )
+            # Check if user is authenticating for the first time
+            if not check_if_user_exists(self.email):
+                # Store user in the database
+                store_user(self.email, self.email.split('@')[0])
             
-            # If no valid credentials available, authenticate
-            if not self.credentials or not self.credentials.valid:
-                if self.credentials and self.credentials.expired and self.credentials.refresh_token:
-                    self.credentials.refresh(Request())
-                else:
-                    if not os.path.exists(self.credentials_file):
-                        raise FileNotFoundError(
-                            f"Gmail credentials file not found: {self.credentials_file}"
-                        )
-                    
-                    flow = InstalledAppFlow.from_client_secrets_file(
-                        self.credentials_file, 
+            # Try to load token from database
+            token_data = get_user_token(self.email)
+            
+            # If token data is found, assign them to the credentials object
+            if token_data:
+                try:
+                    # Load credentials from database token JSON
+                    self.credentials = Credentials.from_authorized_user_info(
+                        token_data,
                         self.SCOPES
                     )
-                    self.credentials = flow.run_local_server(port=0)
-                    print(self.credentials.to_json())
+                    print(f"[GmailAPI] Loaded credentials from database for {self.email}")
+                except Exception as e:
+                    print(f"[GmailAPI] Error loading credentials from database: {e}")
+                    self.credentials = None
+            
+            # Check if credentials are valid or need refresh
+            if self.credentials:
+                if not self.credentials.valid:
+                    if self.credentials.expired and self.credentials.refresh_token:
+                        try:
+                            print(f"[GmailAPI] Refreshing expired token for {self.email}")
+                            self.credentials.refresh(Request())
+                            
+                            # Save refreshed token to database
+                            token_data = json.loads(self.credentials.to_json())
+                            store_user_token(
+                                email=self.email,
+                                username=username or self.email.split('@')[0],
+                                token_json=token_data
+                            )
+                            print(f"[GmailAPI] Token refreshed and saved to database")
+                        except Exception as e:
+                            print(f"[GmailAPI] Token refresh failed: {e}")
+                            self.credentials = None
+            
+            # If no valid credentials, perform OAuth flow
+            if not self.credentials:
+                if not os.path.exists(self.credentials_file):
+                    raise FileNotFoundError(
+                        f"Gmail credentials file not found: {self.credentials_file}"
+                    )
                 
-                # Save credentials for the next run
-                with open(self.token_file, "w") as token:
-                    token.write(self.credentials.to_json())
+                print(f"[GmailAPI] Starting OAuth flow for {self.email}")
+                # 
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    self.credentials_file, 
+                    self.SCOPES
+                )
+                self.credentials = flow.run_local_server(port=0)
+                
+                # Save new token to database
+                token_data = json.loads(self.credentials.to_json())
+                store_user_token(
+                    email=self.email,
+                    username=username or self.email.split('@')[0],
+                    token_json=token_data
+                )
+                print(f"[GmailAPI] New token saved to database for {self.email}")
             
             # Build Gmail service
             self.service = build("gmail", "v1", credentials=self.credentials)
+            print(f"[GmailAPI] Authentication successful for {self.email}")
             return True
             
         except Exception as e:
-            print(f"Authentication failed: {e}")
+            print(f"[GmailAPI] Authentication failed: {e}")
             return False
     
     def get_labels(self) -> List[Dict[str, Any]]:
@@ -154,17 +192,24 @@ def main():
     """
     print("Gmail Agent - API Demo")
     print("=" * 50)
+    print()
     
-    # Initialize Gmail API
-    gmail_api = GmailAPI()
+    # Get user email
+    email = input("Enter your Gmail address: ").strip()
+    if not email:
+        print("Email is required!")
+        return
+    
+    # Initialize Gmail API with user's email
+    gmail_api = GmailAPI(email=email)
     
     # Authenticate
-    print("Authenticating with Gmail...")
+    print(f"\nAuthenticating {email} with Gmail...")
     if not gmail_api.authenticate():
         print("Failed to authenticate with Gmail API.")
         return
     
-    print("✓ Authentication successful!")
+    print("\n✓ Authentication successful!")
     print()
     
     # Fetch and display labels
