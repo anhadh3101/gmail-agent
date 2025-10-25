@@ -30,8 +30,31 @@ const Signup: React.FC = () => {
     try {
       setError('');
       setLoading(true);
-      await signup(email, password);
-      navigate('/dashboard');
+      
+      // Create Firebase user
+      const userCredential = await signup(email, password);
+      
+      // Sync with backend database
+      try {
+        const response = await fetch(`${import.meta.env.BACKEND_URL}/syncUser`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: userCredential.user.email,
+          }),
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to sync user with backend');
+        }
+      } catch (syncError) {
+        console.error('Error syncing with backend:', syncError);
+        // Don't block signup if backend sync fails
+      }
+      
+      navigate('/login');
     } catch (err: any) {
       console.error('Failed to create an account:', err);
       let errorMessage = 'Failed to create an account';

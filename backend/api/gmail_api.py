@@ -8,7 +8,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from typing import List, Dict, Any
 
-from user_ops import get_user_token, store_user_token, check_if_user_exists, store_user
+from .user_ops import get_user_token, store_user_token, check_if_user_exists, store_user
 
 class GmailAPI:
     """

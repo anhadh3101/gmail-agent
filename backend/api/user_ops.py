@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 import json
 
-from model import SessionLocal, User
+from .model import SessionLocal, User
 
 def check_if_user_exists(email: str) -> bool:
     """
@@ -11,16 +11,30 @@ def check_if_user_exists(email: str) -> bool:
     """
     with SessionLocal() as session:
         return session.query(User).filter(User.email == email).first() is not None
-    
-def store_user(email: str, username: str) -> dict:
+
+def create_user(email: str) -> dict:
     """
-    Save or update user's token JSON.
+    Create a new user in the database.
     Returns a dict of the user data.
     """
     with SessionLocal() as session:
-        user = session.query(User).filter(User.email == email).first()
+        user = User(
+            email=email,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
         
-def store_user_token(email: str, username: str, token_json: Dict[str, Any]) -> dict:
+        return {
+            "id": user.id,
+            "email": user.email,
+            "created_at": user.created_at,
+            "updated_at": user.updated_at
+        }
+        
+def save_user_token(email: str, token_json: Dict[str, Any]) -> dict:
     """
     Save or update user's token JSON.
     Returns a dict of the user data.
@@ -31,14 +45,12 @@ def store_user_token(email: str, username: str, token_json: Dict[str, Any]) -> d
         
         if user:
             # Update existing user
-            user.username = username
             user.token_json = token_json
             user.updated_at = datetime.now()
         else:
             # Create new user
             user = User(
                 email=email,
-                username=username,
                 token_json=token_json,
                 created_at=datetime.now(),
                 updated_at=datetime.now()
@@ -51,7 +63,6 @@ def store_user_token(email: str, username: str, token_json: Dict[str, Any]) -> d
         return {
             "id": user.id,
             "email": user.email,
-            "username": user.username,
             "token_json": user.token_json,
             "created_at": user.created_at,
             "updated_at": user.updated_at
@@ -81,9 +92,8 @@ if __name__ == "__main__":
     }
     
     print("TESTING store_user_token:")
-    result = store_user_token(
+    result = save_user_token(
         email="alice@example.com",
-        username="alice",
         token_json=example_token
     )
     print(f"  Stored: {result['email']}, username: {result['username']}")
