@@ -7,8 +7,21 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from typing import List, Dict, Any
+from datetime import datetime, timedelta
 
-from .user_ops import get_user_token, store_user_token, check_if_user_exists, store_user
+try:
+    # Try relative import first (when run as part of package)
+    from .user_ops import get_user_token, store_user_token, check_if_user_exists, store_user
+except ImportError:
+    # Fall back to mock functions when run as script
+    def get_user_token(email: str):
+        return None
+    def store_user_token(email: str, token_json):
+        pass
+    def check_if_user_exists(email: str):
+        return False
+    def store_user(email: str, username: str):
+        pass
 
 class GmailAPI:
     """
@@ -28,7 +41,7 @@ class GmailAPI:
         'openid',
     ]
     
-    def __init__(self, email: str, credentials_file: str = "credentials.json"):
+    def __init__(self, email: str, credentials_file: str = None):
         """
         Initialize Gmail API client.
         
@@ -37,11 +50,12 @@ class GmailAPI:
             credentials_file: Path to OAuth2 credentials JSON file
         """
         self.email = email
-        self.credentials_file = credentials_file
+        # Default to looking in the parent directory (backend folder)
+        self.credentials_file = "credentials.json"
         self.service = None
         self.credentials = None
         
-    def authenticate(self, username: str = None) -> bool:
+    def authenticate(self) -> bool:
         """
         Authenticate with Gmail API using OAuth2.
         Loads token from database if available, otherwise performs OAuth flow.
@@ -88,7 +102,6 @@ class GmailAPI:
                             token_data = json.loads(self.credentials.to_json())
                             store_user_token(
                                 email=self.email,
-                                username=username or self.email.split('@')[0],
                                 token_json=token_data
                             )
                             print(f"[GmailAPI] Token refreshed and saved to database")
@@ -115,7 +128,6 @@ class GmailAPI:
                 token_data = json.loads(self.credentials.to_json())
                 store_user_token(
                     email=self.email,
-                    username=username or self.email.split('@')[0],
                     token_json=token_data
                 )
                 print(f"[GmailAPI] New token saved to database for {self.email}")
@@ -128,8 +140,8 @@ class GmailAPI:
         except Exception as e:
             print(f"[GmailAPI] Authentication failed: {e}")
             return False
-    
-    def get_labels(self) -> List[Dict[str, Any]]:
+        
+    def get_emails(self) -> List[Dict[str, Any]]:
         """
         Fetch all Gmail labels for the authenticated user.
         
@@ -139,13 +151,44 @@ class GmailAPI:
         if not self.service:
             raise Exception("Not authenticated. Call authenticate() first.")
         
+        # Use a hardcoded date for testing (last 7 days)
+        # Format: YYYY/MM/DD
+        last_fetched_time = (datetime.now() - timedelta(days=7)).strftime('%Y/%m/%d')
+        current_time = datetime.now().strftime('%Y/%m/%d')
+        
+        # Construct the query to get the emails sent after the last fetched time.
+        query = f"in:inbox after:{last_fetched_time} before:{current_time}"
+        
         try:
-            results = self.service.users().labels().list(userId="me").execute()
-            labels = results.get("labels", [])
-            return labels
+            all_threads = []
+            page_token = None
+            
+            # Loop through all pages of results
+            while True:
+                results = (
+                    self.service.users().threads().list(
+                        userId="me", 
+                        q=query,
+                        pageToken=page_token
+                    ).execute()
+                )
+                
+                print(f"[GmailAPI] Results: {results}")
+                # Get threads from current page
+                threads = results.get('threads', [])
+                all_threads.extend(threads)
+                
+                # Check if there are more pages
+                page_token = results.get('nextPageToken')
+                if not page_token:
+                    # No more pages, break out of loop
+                    break
+            
+            print(f"[GmailAPI] Fetched {len(all_threads)} threads across all pages")
+            return all_threads
             
         except HttpError as error:
-            raise Exception(f"Failed to fetch labels: {error}")
+            raise Exception(f"Failed to fetch emails: {error}")
     
     def print_labels(self) -> None:
         """
@@ -212,9 +255,12 @@ def main():
     print("\n✓ Authentication successful!")
     print()
     
-    # Fetch and display labels
-    gmail_api.print_labels()
-
+    # Fetch and display threads
+    threads = gmail_api.get_emails()
+    print(f"Fetched {len(threads)} threads")
+    
+    for thread in threads[:5]:  # Show first 5 threads only
+        print(f"\nThread ID: {thread['id']}")
 
 if __name__ == "__main__":
     main()

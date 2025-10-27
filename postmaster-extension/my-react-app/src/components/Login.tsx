@@ -23,26 +23,8 @@ const Login: React.FC = () => {
       setLoading(true);
       const userCredential = await login(email, password);
 
-      try {
-        const response = await fetch(`${import.meta.env.BACKEND_URL}/setUserToken`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: userCredential.user.email,
-          }),
-        });
-
-        if (!response.ok) {
-          console.error('Failed to sync user with backend');
-        }
-      } catch (syncError) {
-        console.error('Error syncing with backend:', syncError);
-        // Don't block login if backend sync fails
-      }
-
-      navigate('/dashboard');
+      // Pass userCredential to dashboard via navigation state
+      navigate('/dashboard', { state: { userCredential } });
     } catch (err: any) {
       console.error('Failed to log in:', err);
       let errorMessage = 'Failed to log in';

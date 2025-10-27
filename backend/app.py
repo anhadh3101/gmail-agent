@@ -16,8 +16,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from api.gmail_api import GmailAPI
-from api.user_ops import check_if_user_exists, create_user, save_user_token
+from api.user_ops import check_if_user_exists, create_user, save_user_token, get_user_token
 from config import Config
+
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend communication
@@ -80,6 +81,7 @@ def set_user_token():
 
 @app.route("/api/getUserEmails", methods=["GET"])
 def get_user_emails():
+    # TODO: Implement the logic to get the user token from the database or create a new token.
     # TODO: Implement the logic to get the user emails.
     # TODO: Classify them through the ML model.
     # TODO: Return the emails that are relevant to the user.
@@ -90,14 +92,23 @@ def get_user_emails():
         
         email = data.get('email')
         
+        # Step 1: Create a new GmailAPI object, it handle the storage and retrieval of 
+        # the user token as well.
         gmail_api = GmailAPI(email=email)
         
+        # Get the updated tokens from the GmailAPI object.
         if not gmail_api.authenticate():
             return jsonify({'error': 'Failed to authenticate with Gmail API'}), 500
         
+        # ------------------------------------------------------------------------------
+        
+        # Step 2: Get the user emails from the GmailAPI object.
         emails = gmail_api.get_emails()
+        
+        # Step 3: Classify the emails through the ML model.
         classified_emails = classify_emails(emails)
         
+        # Step 4: Return the emails that are relevant to the user in a nice JSON format.
         return jsonify({'success': True, 'emails': emails}), 200
     except Exception as e:
         print(f"Error getting user emails: {e}")

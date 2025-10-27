@@ -1,11 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import type { UserCredential } from 'firebase/auth';
 import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get userCredential from navigation state
+  const userCredential = (location.state as { userCredential?: UserCredential })?.userCredential;
+
+  // Example: Log userCredential when available (you can replace this with your logic)
+  useEffect(() => {
+    if (userCredential) {
+      console.log('User credentials received:', userCredential);
+    }
+  }, [userCredential]);
 
   const handleLogout = async () => {
     try {
