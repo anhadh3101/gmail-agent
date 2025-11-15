@@ -69,11 +69,6 @@ class GmailAPI:
         try:
             self.credentials = None
             
-            # Check if user is authenticating for the first time
-            if not check_if_user_exists(self.email):
-                # Store user in the database
-                store_user(self.email, self.email.split('@')[0])
-            
             # Try to load token from database
             token_data = get_user_token(self.email)
             

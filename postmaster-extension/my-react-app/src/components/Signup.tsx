@@ -36,7 +36,7 @@ const Signup: React.FC = () => {
       
       // Sync with backend database
       try {
-        const response = await fetch(`${import.meta.env.BACKEND_URL}/syncUser`, {
+        const response = await fetch(`http://127.0.0.1:5050/api/syncUser`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { UserCredential } from 'firebase/auth';
@@ -8,10 +8,19 @@ const Dashboard: React.FC = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [activeTab, setActiveTab] = useState<'needsLead' | 'noLead'>('needsLead');
+  const emailsNeedingLead = [
+    { id: '1', subject: 'Follow-up required', preview: 'Client asked for a call recap...' },
+    { id: '2', subject: 'New inbound from ACME', preview: 'Need to qualify the lead before...' },
+  ];
+  const emailsWithoutLead = [
+    { id: '3', subject: 'Monthly newsletter', preview: 'Classified as info only...' },
+    { id: '4', subject: 'Internal update', preview: 'No lead action needed...' },
+  ];
   
   // Get userCredential from navigation state
   const userCredential = (location.state as { userCredential?: UserCredential })?.userCredential;
-
+  console.log(userCredential);
   // Example: Log userCredential when available (you can replace this with your logic)
   useEffect(() => {
     if (userCredential) {
@@ -44,23 +53,28 @@ const Dashboard: React.FC = () => {
           <p><strong>Email Verified:</strong> {currentUser?.emailVerified ? 'Yes' : 'No'}</p>
         </div>
         <div className="dashboard-section">
-          <h2>Quick Actions</h2>
-          <div className="action-cards">
-            <div className="action-card">
-              <h3>Gmail Integration</h3>
-              <p>Connect your Gmail account to get started</p>
-              <button className="action-button">Connect Gmail</button>
-            </div>
-            <div className="action-card">
-              <h3>Settings</h3>
-              <p>Manage your account settings</p>
-              <button className="action-button">Go to Settings</button>
-            </div>
-            <div className="action-card">
-              <h3>Analytics</h3>
-              <p>View your email analytics</p>
-              <button className="action-button">View Analytics</button>
-            </div>
+          <h2>Inbox Overview</h2>
+          <div className="tab-header">
+            <button
+              className={`tab-button ${activeTab === 'needsLead' ? 'active' : ''}`}
+              onClick={() => setActiveTab('needsLead')}
+            >
+              Needs Lead ({emailsNeedingLead.length})
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'noLead' ? 'active' : ''}`}
+              onClick={() => setActiveTab('noLead')}
+            >
+              Classified w/out Lead ({emailsWithoutLead.length})
+            </button>
+          </div>
+          <div className="tab-panel">
+            {(activeTab === 'needsLead' ? emailsNeedingLead : emailsWithoutLead).map((email) => (
+              <div key={email.id} className="email-row">
+                <h3>{email.subject}</h3>
+                <p>{email.preview}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>

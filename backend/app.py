@@ -86,11 +86,17 @@ def get_user_emails():
     # TODO: Classify them through the ML model.
     # TODO: Return the emails that are relevant to the user.
     try:
+        # The data field will contain the email of the user.
         data = request.get_json()
         if not data:
+            # Do not process the request if no data is provided.
             return jsonify({'error': 'No data provided'}), 400
         
+        # Step 0: Check if the database has the user.
         email = data.get('email')
+        if not check_if_user_exists(email):
+            # Do not process the request if the user does not exist.
+            return jsonify({'error': 'User does not exist'}), 400 
         
         # Step 1: Create a new GmailAPI object, it handle the storage and retrieval of 
         # the user token as well.
@@ -102,14 +108,15 @@ def get_user_emails():
         
         # ------------------------------------------------------------------------------
         
-        # Step 2: Get the user emails from the GmailAPI object.
+        # Step 2: Get all the latest emails from the timestamp onwards.
         emails = gmail_api.get_emails()
         
         # Step 3: Classify the emails through the ML model.
-        classified_emails = classify_emails(emails)
+        # The function will return two lists, one for the important emails and one for the unimportant emails.
+        important, unimportant = classify_emails(emails)
         
         # Step 4: Return the emails that are relevant to the user in a nice JSON format.
-        return jsonify({'success': True, 'emails': emails}), 200
+        return jsonify({'success': True, 'important_emails': important, 'unimportant_emails': unimportant}), 200
     except Exception as e:
         print(f"Error getting user emails: {e}")
         return jsonify({'error': str(e)}), 500

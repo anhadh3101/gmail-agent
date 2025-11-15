@@ -21,10 +21,10 @@ const Login: React.FC = () => {
     try {
       setError('');
       setLoading(true);
-      const userCredential = await login(email, password);
+      await login(email, password);
 
       // Pass userCredential to dashboard via navigation state
-      navigate('/dashboard', { state: { userCredential } });
+      navigate('/dashboard');
     } catch (err: any) {
       console.error('Failed to log in:', err);
       let errorMessage = 'Failed to log in';
