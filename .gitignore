@@ -1,0 +1,12 @@
+# Log files
+
+gmail/*.log
+
+# Virtual environment
+gmail/.venv/
+
+# Python cache
+gmail/__pycache__/
+
+# IDE files
+.cursor/
