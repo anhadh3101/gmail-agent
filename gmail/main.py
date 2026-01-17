@@ -1,7 +1,7 @@
-from fastapi import FastAPI
-from typing import List
+from fastapi import FastAPI, Header, HTTPException
+from typing import List, Optional
 import logging
-from model import Tool, FetchRecentEmailsRequest, FetchRecentEmailsResponse
+from model import Tool, FetchRecentEmailsResponse, EmailPreview
 from tools import AVAILABLE_TOOLS
 
 app = FastAPI()
@@ -23,9 +23,35 @@ def get_tools():
     logger.info("Getting available tools\n")
     return AVAILABLE_TOOLS
 
-def main():
-    print("Hello from gmail!")
+@app.get("/fetch_recent_emails", response_model=FetchRecentEmailsResponse)
+def fetch_recent_emails(
+    authorization: Optional[str] = Header(None)
+    ):
+    """
+    Fetches the recent emails from the user's inbox.
+    """
+    # If no authorization header is provided, return an error
+    if not authorization:
+        raise HTTPException(status_code=400, detail="Authorization header required")
+    
+    # If the authorization header is not in the correct format, return an error
+    parts = authorization.split(" ")
+    if len(parts) != 2 or parts[0] != "Bearer":
+        raise HTTPException(status_code=400, detail="Invalid authorization header")
+    
+    # Get the access token from the authorization header
+    access_token = parts[1]
+    
+    # TODO: Fetch the recent emails from the user's inbox using the access token
 
-
-if __name__ == "__main__":
-    main()
+    # Dummy data for now
+    return FetchRecentEmailsResponse(
+        emails=[
+            EmailPreview(
+                id="1",
+                thread_id="1",
+                snippet="Test email",
+                from_="test@example.com",
+                subject="Test email"
+            )
+        ])
