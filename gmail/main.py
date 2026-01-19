@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Header, HTTPException
 from typing import List, Optional
 import logging
+from gmail_api import get_all_threads
+from script import get_access_token
 from model import Tool, FetchRecentEmailsResponse, EmailPreview
 from tools import AVAILABLE_TOOLS
 
@@ -31,27 +33,22 @@ def fetch_recent_emails(
     Fetches the recent emails from the user's inbox.
     """
     # If no authorization header is provided, return an error
-    if not authorization:
-        raise HTTPException(status_code=400, detail="Authorization header required")
+    # if not authorization:
+    #     raise HTTPException(status_code=400, detail="Authorization header required")
     
     # If the authorization header is not in the correct format, return an error
-    parts = authorization.split(" ")
-    if len(parts) != 2 or parts[0] != "Bearer":
-        raise HTTPException(status_code=400, detail="Invalid authorization header")
+    # parts = authorization.split(" ")
+    # if len(parts) != 2 or parts[0] != "Bearer":
+    #     raise HTTPException(status_code=400, detail="Invalid authorization header")
     
     # Get the access token from the authorization header
-    access_token = parts[1]
+    # access_token = parts[1]
+    
+    access_token = get_access_token()
     
     # TODO: Fetch the recent emails from the user's inbox using the access token
-
-    # Dummy data for now
+    emails = get_all_threads(access_token, max_threads=20)
+    
     return FetchRecentEmailsResponse(
-        emails=[
-            EmailPreview(
-                id="1",
-                thread_id="1",
-                snippet="Test email",
-                from_="test@example.com",
-                subject="Test email"
-            )
-        ])
+        emails=emails
+    )
