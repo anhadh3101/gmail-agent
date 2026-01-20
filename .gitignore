@@ -1,12 +1,20 @@
-# Log files
+# MCP Server files
+gmail/__pycache__/
+gmail/.venv/
 
 gmail/*.log
 
-# Virtual environment
-gmail/.venv/
 
-# Python cache
-gmail/__pycache__/
 
 # IDE files
 .cursor/
+
+# Credentials
+gmail-client/__pycache__/
+gmail-client/.venv/
+gmail/uv.lock
+
+gmail-client/*.log
+gmail-client/.env
+
+gmail-client/creds/*.json

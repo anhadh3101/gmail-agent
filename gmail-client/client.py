@@ -1,13 +1,6 @@
-from gmail_credentials import get_access_token
+from mcpclient import MCPClient
 
-from contextlib import AsyncExitStack
 import asyncio, sys
-from typing import Optional
-
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-
-from dotenv import load_dotenv
 
 async def main():
     if len(sys.argv) < 2:
@@ -22,5 +15,4 @@ async def main():
         await client.cleanup()
 
 if __name__ == "__main__":
-    import sys
     asyncio.run(main())

@@ -6,7 +6,9 @@ from script import get_access_token
 from model import Tool, FetchRecentEmailsResponse, EmailPreview
 from tools import AVAILABLE_TOOLS
 
-app = FastAPI()
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("gmail")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,38 +19,22 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-@app.get("/tools", response_model=List[Tool])
-def get_tools():
-    """
-    Returns the available tools supported by this MCP server.
-    """
-    logger.info("Getting available tools\n")
-    return AVAILABLE_TOOLS
-
-@app.get("/fetch_recent_emails", response_model=FetchRecentEmailsResponse)
-def fetch_recent_emails(
-    authorization: Optional[str] = Header(None)
-    ):
+@mcp.tool()
+def fetch_recent_emails(access_token: str):
     """
     Fetches the recent emails from the user's inbox.
+    
+    Args:
+        access_token: The access token for the user's Gmail API.
     """
-    # If no authorization header is provided, return an error
-    # if not authorization:
-    #     raise HTTPException(status_code=400, detail="Authorization header required")
-    
-    # If the authorization header is not in the correct format, return an error
-    # parts = authorization.split(" ")
-    # if len(parts) != 2 or parts[0] != "Bearer":
-    #     raise HTTPException(status_code=400, detail="Invalid authorization header")
-    
-    # Get the access token from the authorization header
-    # access_token = parts[1]
-    
-    access_token = get_access_token()
-    
-    # TODO: Fetch the recent emails from the user's inbox using the access token
     emails = get_all_threads(access_token, max_threads=20)
     
     return FetchRecentEmailsResponse(
         emails=emails
     )
+    
+def main():
+    mcp.run(transport="stdio")
+    
+if __name__ == "__main__":
+    main()
