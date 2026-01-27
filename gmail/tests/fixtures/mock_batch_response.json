@@ -1,0 +1,30 @@
+{
+  "boundary": "batch_1234567890",
+  "headers": {
+    "Content-Type": "multipart/mixed; boundary=batch_1234567890"
+  },
+  "response_text": "--batch_1234567890\nContent-Type: application/http\nContent-ID: <response-1>\n\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{\"id\": \"thread_1\", \"threadId\": \"thread_1\", \"historyId\": \"12345\", \"messages\": [{\"id\": \"msg_1\", \"threadId\": \"thread_1\", \"labelIds\": [\"INBOX\"], \"snippet\": \"This is a test email snippet for thread 1\", \"payload\": {\"headers\": [{\"name\": \"From\", \"value\": \"sender1@example.com\"}, {\"name\": \"To\", \"value\": \"recipient@example.com\"}, {\"name\": \"Subject\", \"value\": \"Test Subject 1\"}, {\"name\": \"Date\", \"value\": \"Mon, 1 Jan 2024 12:00:00 +0000\"}]}}]}\n--batch_1234567890\nContent-Type: application/http\nContent-ID: <response-2>\n\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{\"id\": \"thread_2\", \"threadId\": \"thread_2\", \"historyId\": \"12346\", \"messages\": [{\"id\": \"msg_2\", \"threadId\": \"thread_2\", \"labelIds\": [\"INBOX\"], \"snippet\": \"Another test email snippet for thread 2\", \"payload\": {\"headers\": [{\"name\": \"From\", \"value\": \"sender2@example.com\"}, {\"name\": \"To\", \"value\": \"recipient@example.com\"}, {\"name\": \"Subject\", \"value\": \"Test Subject 2\"}, {\"name\": \"Date\", \"value\": \"Mon, 1 Jan 2024 13:00:00 +0000\"}]}}]}\n--batch_1234567890\nContent-Type: application/http\nContent-ID: <response-3>\n\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{\"id\": \"thread_3\", \"threadId\": \"thread_3\", \"historyId\": \"12347\", \"messages\": [{\"id\": \"msg_3\", \"threadId\": \"thread_3\", \"labelIds\": [\"INBOX\"], \"snippet\": \"Test snippet for thread 3 with some content\", \"payload\": {\"headers\": [{\"name\": \"From\", \"value\": \"sender3@example.com\"}, {\"name\": \"To\", \"value\": \"recipient@example.com\"}, {\"name\": \"Subject\", \"value\": \"Test Subject 3\"}, {\"name\": \"Date\", \"value\": \"Mon, 1 Jan 2024 14:00:00 +0000\"}]}}]}\n--batch_1234567890--\n",
+  "expected_emails": [
+    {
+      "id": "msg_1",
+      "thread_id": "thread_1",
+      "snippet": "This is a test email snippet for thread 1",
+      "from_": "sender1@example.com",
+      "subject": "Test Subject 1"
+    },
+    {
+      "id": "msg_2",
+      "thread_id": "thread_2",
+      "snippet": "Another test email snippet for thread 2",
+      "from_": "sender2@example.com",
+      "subject": "Test Subject 2"
+    },
+    {
+      "id": "msg_3",
+      "thread_id": "thread_3",
+      "snippet": "Test snippet for thread 3 with some content",
+      "from_": "sender3@example.com",
+      "subject": "Test Subject 3"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "threads": [
+    {
+      "id": "thread_1",
+      "snippet": "This is a test email snippet for thread 1"
+    },
+    {
+      "id": "thread_2",
+      "snippet": "Another test email snippet for thread 2"
+    },
+    {
+      "id": "thread_3",
+      "snippet": "Test snippet for thread 3 with some content"
+    }
+  ],
+  "nextPageToken": "next_page_token_example",
+  "resultSizeEstimate": 3
+}
