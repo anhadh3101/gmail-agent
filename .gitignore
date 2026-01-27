@@ -1,6 +1,7 @@
 # MCP Server files
 gmail/__pycache__/
 gmail/.venv/
+gmail/.env.test
 
 gmail/*.log
 
