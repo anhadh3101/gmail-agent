@@ -1,6 +1,6 @@
 import requests, time, json, re
 from typing import List, Dict
-from model import EmailPreview
+from .model import EmailPreview
 
 BASE_URL = "https://gmail.googleapis.com/gmail/v1"
 BATCH_BASE_URL = "https://gmail.googleapis.com/batch/gmail/v1"

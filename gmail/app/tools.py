@@ -1,4 +1,4 @@
-from model import Tool
+from .model import Tool
 
 AVAILABLE_TOOLS = [
     Tool(

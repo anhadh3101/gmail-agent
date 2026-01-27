@@ -1,10 +1,10 @@
 from fastapi import FastAPI, Header, HTTPException
 from typing import List, Optional
 import logging
-from gmail_api import get_all_threads
-from script import get_access_token
-from model import Tool, FetchRecentEmailsResponse, EmailPreview
-from tools import AVAILABLE_TOOLS
+from .gmail_api import get_all_threads
+from .script import get_access_token
+from .model import Tool, FetchRecentEmailsResponse, EmailPreview
+from .tools import AVAILABLE_TOOLS
 
 from mcp.server.fastmcp import FastMCP
 
